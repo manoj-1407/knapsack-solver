@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="0/1 Knapsack Problem Solver — Greedy vs Dynamic Programming Comparison" />
+  <title>{% block title %}Knapsack Solver{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}" />
+  <script>
+    (function () {
+      var saved = localStorage.getItem('knapsack-theme') || 'system';
+      var light = saved === 'light' || (saved === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
+      document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/toast.js') }}" defer></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <a href="/" class="logo">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="8" fill="var(--bg-elevated)"/>
+        <rect x="1" y="1" width="34" height="34" rx="7" stroke="var(--border)" stroke-width="1"/>
+        <rect x="8" y="16" width="20" height="14" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M8 20 Q8 14 18 14 Q28 14 28 20" stroke="var(--accent)" stroke-width="1.5" fill="none"/>
+        <path d="M14 16 L14 10 Q14 7 18 7 Q22 7 22 10 L22 16" stroke="var(--cyan-dim)" stroke-width="1.2" fill="none" stroke-dasharray="2 1.5"/>
+        <circle cx="14" cy="22" r="1.2" fill="var(--accent)" opacity="0.6"/>
+        <circle cx="18" cy="22" r="1.2" fill="var(--accent)" opacity="0.6"/>
+        <circle cx="22" cy="22" r="1.2" fill="var(--accent)" opacity="0.6"/>
+        <circle cx="14" cy="26" r="1.2" fill="var(--accent)" opacity="0.35"/>
+        <circle cx="18" cy="26" r="1.2" fill="var(--accent)" opacity="0.35"/>
+        <circle cx="22" cy="26" r="1.2" fill="var(--accent)" opacity="0.35"/>
+      </svg>
+      <span class="logo-text">
+        <span class="logo-title">KnapsackLab</span>
+        <span class="logo-sub">DP vs Greedy</span>
+      </span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Solver
+        </a></li>
+        <li><a href="/benchmark" class="{% if request.endpoint == 'benchmark_page' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Benchmark
+        </a></li>
+        <li><a href="/history" class="{% if request.endpoint == 'history' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
+          History
+        </a></li>
+        <li><a href="/logout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </a></li>
+      </ul>
+    </nav>
+    <div class="theme-toggle">
+      <button class="theme-btn" data-theme="dark"   title="Dark theme">🌙</button>
+      <button class="theme-btn" data-theme="light"  title="Light theme">☀️</button>
+      <button class="theme-btn" data-theme="system" title="System theme">💻</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer style="text-align:center; padding:var(--sp-5); border-top:1px solid var(--border); color:var(--text-muted); font-size:0.75rem;">
+    <span class="mono">KnapsackLab v1.0</span> &nbsp;·&nbsp;
+    Data Analysis of Algorithms &nbsp;·&nbsp;
+    <a href="https://github.com" target="_blank" rel="noopener" style="color:var(--text-muted); text-decoration:none;">GitHub ↗</a>
+  </footer>
+</div>
+
+<div id="toast-container"></div>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

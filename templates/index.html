@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% block title %}Solver — KnapsackLab{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title">0/1 Knapsack Solver</h1>
+  <p class="page-subtitle">
+    Compare Dynamic Programming (guaranteed optimal) against three Greedy heuristics.
+    Animate the DP table, inspect decision steps, and see where Greedy falls short.
+  </p>
+</div>
+
+<!-- ==================== MAIN LAYOUT ==================== -->
+<div class="solver-layout">
+
+  <!-- ========== LEFT PANEL — Input ========== -->
+  <aside>
+
+    <!-- Presets -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Preset Problems
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="preset-chips">
+          <button class="preset-chip" data-preset="classic">📦 Classic</button>
+          <button class="preset-chip" data-preset="jewels">💎 Jewels</button>
+          <button class="preset-chip" data-preset="greedy_fails">⚠️ Greedy Fails</button>
+          <button class="preset-chip" data-preset="expedition">🏔️ Expedition</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capacity -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label" for="capacity">
+            Knapsack Capacity (W)
+          </label>
+          <input
+            type="number"
+            id="capacity"
+            class="form-input"
+            value="50"
+            min="1"
+            max="500"
+            placeholder="e.g. 50"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Items &nbsp;<span id="item-count" style="color:var(--accent);font-family:var(--font-mono)">3</span>
+        </span>
+        <button id="add-item-btn" class="btn btn-secondary btn-sm">+ Add Row</button>
+      </div>
+      <div class="item-table-wrap">
+        <table class="item-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Weight</th>
+              <th>Value</th>
+              <th>V/W</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="item-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex gap-3">
+      <button id="solve-btn" class="btn btn-primary btn-lg" style="flex:1" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Solve
+      </button>
+      <button id="clear-btn" class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Complexity reference -->
+    <div class="complexity-box mt-4">
+      <div class="complexity-item">
+        <div class="label">DP Complexity</div>
+        <div class="value">O(n·W)</div>
+      </div>
+      <div class="complexity-item">
+        <div class="label">Greedy Complexity</div>
+        <div class="value">O(n log n)</div>
+      </div>
+      <div class="complexity-item">
+        <div class="label">DP for this problem</div>
+        <div class="value mono text-accent" id="complexity-dp">—</div>
+      </div>
+      <div class="complexity-item">
+        <div class="label">Greedy for this problem</div>
+        <div class="value mono text-amber" id="complexity-greedy">—</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ========== RIGHT PANEL — Results ========== -->
+  <section>
+
+    <!-- Placeholder before solving -->
+    <div id="empty-state" style="display:flex; align-items:center; justify-content:center; min-height:400px; flex-direction:column; gap:var(--sp-4); color:var(--text-muted);">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <p style="font-size:.9rem">Select a preset or add items, then hit <strong>Solve</strong></p>
+    </div>
+
+    <!-- Results section — hidden until solve -->
+    <div id="results-section" class="hidden">
+
+      <!-- ---- Save bar ---- -->
+      <div class="flex items-center justify-between mb-6">
+        <h2 style="font-size:1.05rem; font-weight:600">Results</h2>
+        <div class="flex gap-3">
+          <button id="save-btn" class="btn btn-secondary btn-sm" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Save
+          </button>
+          <button id="replay-btn" class="btn btn-ghost btn-sm">↺ Replay</button>
+        </div>
+      </div>
+
+      <!-- ---- Comparison Cards ---- -->
+      <div class="comparison-grid mb-6">
+
+        <!-- DP Card -->
+        <div class="result-card dp-card">
+          <span class="result-badge">Dynamic Programming</span>
+          <div class="result-value text-accent" id="dp-value">—</div>
+          <div class="result-label">Optimal Value</div>
+          <div class="divider" style="margin:var(--sp-4) 0"></div>
+          <div class="metric-row" style="justify-content:center; flex-direction:column; align-items:flex-start; gap:var(--sp-2);">
+            <div class="metric-chip">
+              <span class="key">Weight</span>
+              <span class="val" id="dp-weight">—</span>
+            </div>
+            <div class="metric-chip">
+              <span class="key">Items</span>
+              <span class="val" id="dp-items-count">—</span>
+            </div>
+            <div class="metric-chip">
+              <span class="key">Time</span>
+              <span class="val" id="dp-time">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Greedy Ratio -->
+        <div class="result-card g-ratio">
+          <span class="result-badge">Greedy · Ratio</span>
+          <div class="result-value text-amber" id="g-ratio-value">—</div>
+          <div class="result-label">Greedy Value</div>
+          <div class="efficiency-ring">
+            <svg viewBox="0 0 56 56" width="60" height="60">
+              <circle class="ring-track" cx="28" cy="28" r="26"/>
+              <circle class="ring-fill" id="g-ratio-ring" cx="28" cy="28" r="26" stroke="var(--amber)"/>
+            </svg>
+            <div class="ring-text" id="g-ratio-eff">—</div>
+          </div>
+          <div class="result-label mt-2">vs Optimal</div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Time</span><span class="val" id="g-ratio-time">—</span>
+          </div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Weight</span><span class="val" id="g-ratio-weight">—</span>
+          </div>
+        </div>
+
+        <!-- Greedy Value -->
+        <div class="result-card g-value">
+          <span class="result-badge">Greedy · Value</span>
+          <div class="result-value" style="color:var(--purple)" id="g-value-value">—</div>
+          <div class="result-label">Greedy Value</div>
+          <div class="efficiency-ring">
+            <svg viewBox="0 0 56 56" width="60" height="60">
+              <circle class="ring-track" cx="28" cy="28" r="26"/>
+              <circle class="ring-fill" id="g-value-ring" cx="28" cy="28" r="26" stroke="var(--purple)"/>
+            </svg>
+            <div class="ring-text" id="g-value-eff">—</div>
+          </div>
+          <div class="result-label mt-2">vs Optimal</div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Time</span><span class="val" id="g-value-time">—</span>
+          </div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Weight</span><span class="val" id="g-value-weight">—</span>
+          </div>
+        </div>
+
+        <!-- Greedy Weight -->
+        <div class="result-card g-weight">
+          <span class="result-badge">Greedy · Weight</span>
+          <div class="result-value text-green" id="g-weight-value">—</div>
+          <div class="result-label">Greedy Value</div>
+          <div class="efficiency-ring">
+            <svg viewBox="0 0 56 56" width="60" height="60">
+              <circle class="ring-track" cx="28" cy="28" r="26"/>
+              <circle class="ring-fill" id="g-weight-ring" cx="28" cy="28" r="26" stroke="var(--green)"/>
+            </svg>
+            <div class="ring-text" id="g-weight-eff">—</div>
+          </div>
+          <div class="result-label mt-2">vs Optimal</div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Time</span><span class="val" id="g-weight-time">—</span>
+          </div>
+          <div class="metric-chip mt-2" style="justify-content:center">
+            <span class="key">Weight</span><span class="val" id="g-weight-weight">—</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ---- Charts ---- -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <span class="card-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+            </svg>
+            Visual Comparison
+          </span>
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab-group="charts" data-tab="bar">Bar</button>
+            <button class="tab-btn"        data-tab-group="charts" data-tab="radar">Radar</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div data-tab-panel="charts" data-tab="bar" class="tab-panel active" style="height:260px">
+            <canvas id="value-bar-chart"></canvas>
+          </div>
+          <div data-tab-panel="charts" data-tab="radar" class="tab-panel" style="height:260px">
+            <canvas id="radar-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- DP Table Visualizer ---- -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <span class="card-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+              <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+            </svg>
+            DP Table Animation
+          </span>
+          <div class="flex items-center gap-3">
+            <label class="form-label" style="margin:0; white-space:nowrap; font-size:.72rem">
+              Speed: <span id="speed-label">5×</span>
+            </label>
+            <input type="range" id="speed-slider" min="1" max="10" value="5" style="width:80px; accent-color:var(--accent)" />
+            <button id="step-mode-btn" class="btn btn-secondary btn-sm">⏸ Step</button>
+            <button id="next-step-btn" class="btn btn-ghost btn-sm">→ Next</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="dp-table-container" class="dp-table-scroll"></div>
+        </div>
+        <div style="padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); display:flex; gap:var(--sp-4); font-size:.72rem; color:var(--text-muted);">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <span style="width:12px;height:12px;border-radius:3px;background:rgba(0,212,255,0.2);display:inline-block"></span> Filled cell
+          </span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <span style="width:12px;height:12px;border-radius:3px;background:rgba(255,184,0,0.25);display:inline-block"></span> Backtrack path
+          </span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <span style="width:12px;height:12px;border-radius:3px;background:rgba(0,229,160,0.2);display:inline-block"></span> Selected item cell
+          </span>
+        </div>
+      </div>
+
+      <!-- ---- Greedy Decision Steps ---- -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <span class="card-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            Greedy Decision Steps
+          </span>
+          <div class="tab-bar">
+            <button class="tab-btn active" data-greedy-tab="ratio">Ratio</button>
+            <button class="tab-btn"        data-greedy-tab="value">Value</button>
+            <button class="tab-btn"        data-greedy-tab="weight">Weight</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div data-greedy-panel="ratio" class="step-list" id="greedy-steps-ratio"></div>
+          <div data-greedy-panel="value" class="step-list hidden" id="greedy-steps-value"></div>
+          <div data-greedy-panel="weight" class="step-list hidden" id="greedy-steps-weight"></div>
+        </div>
+      </div>
+
+      <!-- ---- Selected Items Detail ---- -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Selected Items Detail
+          </span>
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab-group="items" data-tab="dp-items">DP</button>
+            <button class="tab-btn"        data-tab-group="items" data-tab="ratio-items">Ratio</button>
+            <button class="tab-btn"        data-tab-group="items" data-tab="value-items">Value</button>
+            <button class="tab-btn"        data-tab-group="items" data-tab="weight-items">Weight</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div data-tab-panel="items" data-tab="dp-items" class="tab-panel active selected-items" id="dp-selected"></div>
+          <div data-tab-panel="items" data-tab="ratio-items"  class="tab-panel selected-items" id="g-ratio-selected"></div>
+          <div data-tab-panel="items" data-tab="value-items"  class="tab-panel selected-items" id="g-value-selected"></div>
+          <div data-tab-panel="items" data-tab="weight-items" class="tab-panel selected-items" id="g-weight-selected"></div>
+        </div>
+      </div>
+
+    </div><!-- /results-section -->
+  </section>
+</div><!-- /solver-layout -->
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/visualizer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/solver.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Benchmark — KnapsackLab{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title">Complexity Benchmark</h1>
+  <p class="page-subtitle">
+    Empirically measure how runtime scales with problem size.
+    DP runs in O(n·W) while Greedy runs in O(n log n) — see it live.
+  </p>
+</div>
+
+<!-- Controls -->
+<div class="card mb-6">
+  <div class="card-body">
+    <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:var(--sp-4); align-items:flex-end;">
+      <div class="form-group">
+        <label class="form-label" for="bench-n">Max Items (n)</label>
+        <input type="number" id="bench-n" class="form-input" value="30" min="5" max="80" />
+        <span style="font-size:.72rem; color:var(--text-muted); margin-top:4px; display:block">
+          Larger n → longer runtime, better trend visibility
+        </span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="bench-cap">Capacity (W)</label>
+        <input type="number" id="bench-cap" class="form-input" value="200" min="20" max="1000" />
+        <span style="font-size:.72rem; color:var(--text-muted); margin-top:4px; display:block">
+          Higher W amplifies DP's O(n·W) growth
+        </span>
+      </div>
+      <button id="bench-btn" class="btn btn-primary btn-lg">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Run Benchmark
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-6); margin-bottom:var(--sp-6);">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Runtime vs Problem Size
+      </span>
+    </div>
+    <div class="card-body" style="height:320px">
+      <canvas id="bench-time-chart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        Greedy Accuracy vs DP Optimal
+      </span>
+    </div>
+    <div class="card-body" style="height:320px">
+      <canvas id="bench-eff-chart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Theory explainer -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Algorithm Analysis
+    </span>
+  </div>
+  <div class="card-body">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-8);">
+
+      <div>
+        <h3 style="font-size:.9rem; font-weight:600; color:var(--cyan); margin-bottom:var(--sp-3);">
+          Dynamic Programming — O(n·W)
+        </h3>
+        <p style="font-size:.85rem; color:var(--text-secondary); line-height:1.7; margin-bottom:var(--sp-3);">
+          Builds a 2D table of size (n+1)×(W+1). Each cell dp[i][w] stores the
+          maximum value achievable using items 1..i with capacity w. The recurrence:
+        </p>
+        <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-4); font-family:var(--font-mono); font-size:.78rem; line-height:1.8; margin-bottom:var(--sp-3);">
+          dp[i][w] = max(<br>
+          &nbsp;&nbsp;dp[i-1][w],<br>
+          &nbsp;&nbsp;dp[i-1][w - w<sub>i</sub>] + v<sub>i</sub>&nbsp;&nbsp;<span style="color:var(--text-muted)">// if w ≥ w<sub>i</sub></span><br>
+          )
+        </div>
+        <p style="font-size:.82rem; color:var(--text-secondary); line-height:1.6;">
+          Backtracking through the filled table reveals exactly which items were selected.
+          Guaranteed to find the global optimum. Space: O(n·W).
+        </p>
+      </div>
+
+      <div>
+        <h3 style="font-size:.9rem; font-weight:600; color:var(--amber); margin-bottom:var(--sp-3);">
+          Greedy Heuristic — O(n log n)
+        </h3>
+        <p style="font-size:.85rem; color:var(--text-secondary); line-height:1.7; margin-bottom:var(--sp-3);">
+          Sort items by a chosen criterion, then greedily take items that fit until
+          the knapsack is full. Three strategies are compared:
+        </p>
+        <div style="display:flex; flex-direction:column; gap:var(--sp-3);">
+          <div style="padding:var(--sp-3) var(--sp-4); background:rgba(255,184,0,.07); border:1px solid rgba(255,184,0,.2); border-radius:var(--r-md);">
+            <div style="font-size:.75rem; font-weight:600; color:var(--amber); margin-bottom:4px;">Ratio Strategy</div>
+            <div style="font-size:.78rem; color:var(--text-secondary);">Sort by v/w descending. Best approximation for most cases. Works perfectly when items can be split (fractional knapsack) but may fail in 0/1 variant.</div>
+          </div>
+          <div style="padding:var(--sp-3) var(--sp-4); background:rgba(167,139,250,.07); border:1px solid rgba(167,139,250,.2); border-radius:var(--r-md);">
+            <div style="font-size:.75rem; font-weight:600; color:var(--purple); margin-bottom:4px;">Value Strategy</div>
+            <div style="font-size:.78rem; color:var(--text-secondary);">Sort by value descending. Maximises immediate gain but may fill capacity with heavy items, missing better combinations.</div>
+          </div>
+          <div style="padding:var(--sp-3) var(--sp-4); background:rgba(0,229,160,.07); border:1px solid rgba(0,229,160,.2); border-radius:var(--r-md);">
+            <div style="font-size:.75rem; font-weight:600; color:var(--green); margin-bottom:4px;">Weight Strategy</div>
+            <div style="font-size:.78rem; color:var(--text-secondary);">Sort by weight ascending. Fits the most items but completely ignores value — often produces poor results on mixed datasets.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="padding:var(--sp-4); background:rgba(255,77,106,.06); border:1px solid rgba(255,77,106,.2); border-radius:var(--r-md);">
+      <h4 style="font-size:.82rem; font-weight:600; color:var(--red); margin-bottom:var(--sp-2);">⚠ When Greedy Fails (Counterexample)</h4>
+      <p style="font-size:.82rem; color:var(--text-secondary); line-height:1.6;">
+        Capacity W = 10. Items: A (w=6, v=30, ratio=5.0), B (w=5, v=25, ratio=5.0), C (w=5, v=25, ratio=5.0).<br>
+        Greedy (ratio) picks A (v=30, fills 6/10). Total = 30.<br>
+        DP picks B + C (v=25+25=50, fills 10/10). Total = 50. &nbsp;
+        <strong style="color:var(--red)">Greedy is 40% suboptimal here.</strong><br>
+        Load the "⚠️ Greedy Fails" preset on the Solver page to see this animated.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  // Auto-run on page load with default params
+  document.addEventListener('DOMContentLoaded', () => {
+    window.chartManager?.runBenchmark();
+  });
+</script>
+{% endblock %}
