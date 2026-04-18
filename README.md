@@ -1,8 +1,6 @@
 # KnapsackLab — 0/1 Knapsack: Greedy vs Dynamic Programming
 
-> A full-stack web application that solves the 0/1 Knapsack problem using **Dynamic Programming** and three **Greedy heuristics**, visualises the DP table cell-by-cell, benchmarks runtime complexity, and lets you compare results side by side.
-
-Built for the *Data Analysis of Algorithms* course project.
+> Interactive educational tool for the 0/1 Knapsack problem. Compare exact Dynamic Programming with three Greedy heuristics using visualised computation, runtime benchmarks, and saved history.
 
 ---
 
@@ -90,7 +88,33 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000) — password: **niveditha**
+Open [http://localhost:5000](http://localhost:5000) — password: **manoj**
+
+---
+
+## Testing
+
+### 1. Run the web app
+
+Open `http://localhost:5000` and verify the login page accepts the password `manoj`.
+
+### 2. Validate solver behavior
+
+- Load a preset problem.
+- Run the solver and compare Dynamic Programming with Greedy Ratio, Greedy Value, and Greedy Weight.
+- Confirm the DP result always returns the highest value.
+
+### 3. Verify benchmark results
+
+- Open the benchmark page.
+- Run the benchmark to see runtime and accuracy charts.
+- Confirm the runtime curves reflect `O(n·W)` for DP and near `O(n log n)` for greedy.
+
+### 4. Save and load history
+
+- Solve a case and save it.
+- Open the history page and reload the saved problem.
+- Confirm the saved problem matches the original input and results.
 
 ---
 
@@ -167,7 +191,7 @@ Time: O(n·W) | Space: O(n·W) for full table (required for visualisation)
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_PASSWORD` | `niveditha` | Login password |
+| `APP_PASSWORD` | `manoj` | Login password |
 | `SECRET_KEY` | (auto-generated) | Flask session key |
 | `PORT` | `5000` | HTTP port |
 | `FLASK_DEBUG` | `1` | Debug mode (set `0` for production) |
@@ -177,7 +201,3 @@ Time: O(n·W) | Space: O(n·W) for full table (required for visualisation)
 ## License
 
 MIT — free for academic and personal use.
-
----
-
-*Course: Data Analysis of Algorithms | Author: Niveditha*

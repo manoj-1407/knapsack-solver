@@ -6,7 +6,7 @@ Usage:
 
 Environment variables (optional):
     SECRET_KEY   — Flask secret key (auto-generated if not set)
-    APP_PASSWORD — Login password (default: niveditha)
+    APP_PASSWORD — Login password (default: manoj)
     PORT         — Port to listen on (default: 5000)
 """
 

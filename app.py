@@ -2,8 +2,6 @@
 0/1 Knapsack Problem Solver
 Greedy vs Dynamic Programming — Side-by-Side Comparison
 
-Course  : Data Analysis of Algorithms
-Author  : Niveditha
 Version : 1.0.0
 
 Entry point for the Flask application. Handles routing, session auth,
@@ -40,7 +38,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
 # Single shared password — change via env var in production
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "niveditha")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "manoj")
 
 
 # ---------------------------------------------------------------------------
