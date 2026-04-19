@@ -9,70 +9,15 @@
 </div>
 
 <div class="card">
-  {% if problems %}
-  <div style="overflow-x:auto;">
-    <table class="history-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th>Items</th>
-          <th>Capacity</th>
-          <th>Saved</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in problems %}
-        <tr>
-          <td class="mono text-muted" style="font-size:.75rem">{{ p.id }}</td>
-          <td style="font-weight:500;">{{ p.name }}</td>
-          <td>
-            <span style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:.8rem;">
-              <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;opacity:.6"></span>
-              {{ p.item_count }} items
-            </span>
-          </td>
-          <td class="mono" style="font-size:.82rem;">{{ p.capacity }}</td>
-          <td style="color:var(--text-secondary); font-size:.82rem;">
-            {{ p.created_at | replace('T', ' ') }}
-          </td>
-          <td>
-            <div style="display:flex; gap:var(--sp-2);">
-              <button
-                class="btn btn-secondary btn-sm load-btn"
-                data-id="{{ p.id }}"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
-                </svg>
-                Load
-              </button>
-              <button
-                class="btn btn-danger btn-sm del-btn"
-                data-id="{{ p.id }}"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
-                </svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div id="history-content">
+    <!-- History table will be loaded here -->
+    <div style="display:flex; align-items:center; justify-content:center; flex-direction:column; gap:var(--sp-4); padding:var(--sp-12); color:var(--text-muted);">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+        <path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+      </svg>
+      <p style="font-size:.9rem;">Loading history...</p>
+    </div>
   </div>
-
-  {% else %}
-  <div style="display:flex; align-items:center; justify-content:center; flex-direction:column; gap:var(--sp-4); padding:var(--sp-12); color:var(--text-muted);">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
-      <path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-    </svg>
-    <p style="font-size:.9rem;">No saved problems yet.</p>
-    <a href="/" class="btn btn-secondary btn-sm">← Go to Solver</a>
-  </div>
-  {% endif %}
 </div>
 
 <!-- Detail modal -->
@@ -106,6 +51,115 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  loadHistory();
+
+  // Refresh history when page becomes visible (in case user saved something)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      loadHistory();
+    }
+  });
+});
+
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history');
+    if (!res.ok) {
+      throw new Error('Failed to load history');
+    }
+    const problems = await res.json();
+    renderHistory(problems);
+  } catch (err) {
+    console.error('History load error:', err);
+    document.getElementById('history-content').innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:center; flex-direction:column; gap:var(--sp-4); padding:var(--sp-12); color:var(--text-muted);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        <p style="font-size:.9rem;">Failed to load history.</p>
+        <button onclick="loadHistory()" class="btn btn-secondary btn-sm">Retry</button>
+      </div>
+    `;
+  }
+}
+
+function renderHistory(problems) {
+  if (problems.length === 0) {
+    document.getElementById('history-content').innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:center; flex-direction:column; gap:var(--sp-4); padding:var(--sp-12); color:var(--text-muted);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+          <path d="M3 3h6l2 2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+        </svg>
+        <p style="font-size:.9rem;">No saved problems yet.</p>
+        <a href="/" class="btn btn-secondary btn-sm">← Go to Solver</a>
+      </div>
+    `;
+    return;
+  }
+
+  const tableHtml = `
+    <div style="overflow-x:auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Items</th>
+            <th>Capacity</th>
+            <th>Saved</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${problems.map(p => `
+            <tr>
+              <td class="mono text-muted" style="font-size:.75rem">${p.id}</td>
+              <td style="font-weight:500;">${escHtml(p.name)}</td>
+              <td>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:.8rem;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;opacity:.6"></span>
+                  ${p.item_count} items
+                </span>
+              </td>
+              <td class="mono" style="font-size:.82rem;">${p.capacity}</td>
+              <td style="color:var(--text-secondary); font-size:.82rem;">
+                ${p.created_at.replace('T', ' ')}
+              </td>
+              <td>
+                <div style="display:flex; gap:var(--sp-2);">
+                  <button
+                    class="btn btn-secondary btn-sm load-btn"
+                    data-id="${p.id}"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+                    </svg>
+                    Load
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm del-btn"
+                    data-id="${p.id}"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('history-content').innerHTML = tableHtml;
+
+  // Re-attach event listeners
+  attachHistoryEventListeners();
+}
+
+function attachHistoryEventListeners() {
   // Delete
   document.querySelectorAll('.del-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -113,6 +167,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const id  = btn.dataset.id;
       const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
       if (res.ok) {
+        btn.closest('tr').remove();
+        toast('Deleted.', 'success');
+        // Refresh the history count
+        loadHistory();
+      } else {
+        toast('Delete failed.', 'error');
+      }
+    });
+  });
+
+  // Load detail
+  document.querySelectorAll('.load-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id  = btn.dataset.id;
+      const res = await fetch(`/api/history/${id}`);
+      if (!res.ok) { toast('Failed to load.', 'error'); return; }
+      const data = await res.json();
+      showModal(data);
+    });
+  });
+}
         btn.closest('tr').remove();
         toast('Deleted.', 'success');
       } else {
@@ -140,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === e.currentTarget)
       e.currentTarget.classList.add('hidden');
   });
-});
+}
 
 function showModal(data) {
   document.getElementById('modal-title').textContent = data.name;
