@@ -288,26 +288,44 @@ function keyColor(key) {
    ------------------------------------------------------------------------- */
 
 async function saveToHistory() {
-  if (!lastResult) return;
+  if (!lastResult) {
+    toast('No results to save. Solve a problem first.', 'error');
+    return;
+  }
 
   const name = prompt('Name this problem:', `Problem — ${items.length} items, cap ${lastResult.capacity}`);
   if (name === null) return;  // user cancelled
 
-  const res  = await fetch('/api/save', {
-    method : 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body   : JSON.stringify({
+  try {
+    const payload = {
       name,
       items    : items,
       capacity : lastResult.capacity,
       dp_result: lastResult.dp,
       greedy_result: lastResult.greedy,
-    }),
-  });
-  const data = await res.json();
+    };
 
-  if (res.ok) toast(`Saved as "${name}"`, 'success');
-  else        toast(data.error || 'Save failed.', 'error');
+    const res = await fetch('/api/save', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      toast(`Saved as "${name}"`, 'success');
+      // Optionally redirect to history after save
+      setTimeout(() => {
+        window.location.href = '/history';
+      }, 1000);
+    } else {
+      toast(data.error || 'Save failed.', 'error');
+    }
+  } catch (err) {
+    console.error('Save error:', err);
+    toast('Save error: ' + err.message, 'error');
+  }
 }
 
 /* -------------------------------------------------------------------------
